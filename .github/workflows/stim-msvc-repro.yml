@@ -1,0 +1,31 @@
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/stim-msvc-repro.yml"]
+
+jobs:
+  build-stim:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["windows-latest", "windows-2022"]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Show Visual Studio / MSVC versions
+        run: |
+          VSWHERE="/c/Program Files (x86)/Microsoft Visual Studio/Installer/vswhere.exe"
+          "$VSWHERE" -latest -property displayName
+          "$VSWHERE" -latest -property catalog_productDisplayVersion
+          ls "$("$VSWHERE" -latest -property installationPath)/VC/Tools/MSVC"
+
+      - name: Install uv and Python 3.15
+        run: |
+          pip install uv
+          uv python install 3.15
+          uv venv --python 3.15
+
+      - name: Build stim 1.16.0 from source
+        run: uv pip install -v --no-binary stim stim==1.16.0
